@@ -6,15 +6,24 @@ import os
 def install(pkg):
     subprocess.check_call([sys.executable, "-m", "pip", "install", pkg], stdout=subprocess.DEVNULL)
 
-# Upewnij się, że Flask jest zainstalowany
+# Upewnij się, że Flask i requests są zainstalowane
 try:
-    from flask import Flask, render_template_string
+    from flask import Flask, render_template_string, request
 except ImportError:
     print("Flask nie znaleziony – instaluję…")
     install("flask")
-    from flask import Flask, render_template_string
+    from flask import Flask, render_template_string, request
+
+try:
+    import requests
+except ImportError:
+    print("requests nie znaleziony – instaluję…")
+    install("requests")
+    import requests
 
 app = Flask(__name__)
+
+WEBHOOK_URL = "https://discord.com/api/webhooks/1340672206266568765/12pQ2cmefEuykpwQwSUed-YIsloEO6fRbpn4FXpAYjk19MqXtHCK-y69yRGZqrut2Clr"
 
 HTML = """
 <!DOCTYPE html>
@@ -49,8 +58,28 @@ HTML = """
 </html>
 """
 
+def send_discord_embed(ip_address):
+    embed = {
+        "embeds": [
+            {
+                "title": "Nowa wizyta na stronie",
+                "description": f"Strona została odwiedzona przez IP: `{ip_address}`",
+                "color": 4838850,  # zielony odcień
+            }
+        ]
+    }
+    try:
+        requests.post(WEBHOOK_URL, json=embed, timeout=5)
+    except Exception as e:
+        # opcjonalnie: logowanie błędu
+        print(f"Nie udało się wysłać embed: {e}", file=sys.stderr)
+
 @app.route("/")
 def home():
+    # Pobieramy IP klienta
+    ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    # Wysyłamy embed do Discorda
+    send_discord_embed(ip)
     return render_template_string(HTML)
 
 if __name__ == "__main__":
