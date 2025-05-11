@@ -2,6 +2,7 @@
 import subprocess
 import sys
 import threading
+import random
 from flask import Flask, render_template_string, request
 import requests
 
@@ -49,41 +50,144 @@ URLS = [
     "https://test123x-j75y.onrender.com",
 ]
 
-HTML = """
+# 100 losowych powitań
+GREETINGS = [
+    "Witaj, podróżniku!",
+    "Hejka!",
+    "Siemanko!",
+    "Dzień dobry!",
+    "Szczęść Boże!",
+    "Czołem!",
+    "Pozdrawiam!",
+    "Hej ho!",
+    "Yo!",
+    "Hola!",
+    "Salam!",
+    "Serwus!",
+    "Hej!",
+    "Witam serdecznie!",
+    "Hej, jak tam?",
+    "Siema!",
+    "Co słychać?",
+    "Wszystkiego dobrego!",
+    "Cześć!",
+    "Dobrego dnia!",
+    "Miłego dnia!",
+    "Udanego dnia!",
+    "Wspaniałego dnia!",
+    "Radosnego dnia!",
+    "Ciepłego powitania!",
+    "Wesołych wędrówek!",
+    "Pozdrawiam ciepło!",
+    "Zdrów bądź!",
+    "Moc pozdrowień!",
+    "Hejka, hejka!",
+    "Hej, hej!",
+    "Witaj!",
+    "Hej, hej, hej!",
+    "Czołem, czołem!",
+    "Yo, yo!",
+    "Salute!",
+    "Salut!",
+    "Grüß dich!",
+    "Buongiorno!",
+    "Bonjour!",
+    "Good day!",
+    "Good morning!",
+    "Guten Tag!",
+    "Buonasera!",
+    "Bonsoir!",
+    "Buena día!",
+    "Halo!",
+    "Hej, ho!",
+    "Witam!",
+    "Witajcie!",
+    "Czołgiem!",
+    "Dzień dobry wszystkim!",
+    "Witam wszystkich!",
+    "Hello!",
+    "Hej, witaj!",
+    "Pozdrowienia!",
+    "Miło cię widzieć!",
+    "Fajnie, że jesteś!",
+    "Cześć, cześć!",
+    "Słońca na drodze!",
+    "Siema, ziomek!",
+    "Siema, siema!",
+    "Hej, jak leci?",
+    "Co tam?",
+    "Hej, hej, hej!",
+    "Hej, co słychać?",
+    "Pozdrawiam serdecznie!",
+    "Witaj w sieci!",
+    "Witaj w necie!",
+    "Witaj w cyfrowym świecie!",
+    "Cześć wirtualnie!",
+    "Cześć online!",
+    "Siema w sieci!",
+    "Yo, welcome!",
+    "Yo, witaj!",
+    "Yo, pozdro!",
+    "Yo, cześć!",
+    "What’s up!",
+    "Howdy!",
+    "G’day!",
+    "Sup!",
+    "Halo, halo!",
+    "Witaj w mojej aplikacji!",
+    "Witam w moim świecie!",
+    "Pozdrowienia z serwera!",
+    "Serwer pozdrawia!",
+    "Masz dziś szczęście!",
+    "Dzień dobry z serwera!",
+    "Hej z serwera!",
+    "Cześć z serwera!",
+    "Witaj ponownie!",
+    "Miło znowu cię widzieć!",
+    "Znowu z tobą!",
+    "Znowu tu jesteś!",
+    "Znowu my się widzimy!",
+    "Hola, amigo!",
+    "Hola, amiga!",
+    "Saludos!",
+    "Hej, dawno nie było!",
+]
+
+HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Animacja Siema!</title>
+    <title>Animacja</title>
     <style>
-        body { display:flex; justify-content:center; align-items:center;
-               height:100vh; margin:0; background:#222; }
-        h1 { font-family:'Arial',sans-serif; font-size:5rem;
-             color:#fff; text-transform:uppercase;
+        body {{ display:flex; justify-content:center; align-items:center;
+               height:100vh; margin:0; background:#222; }}
+        h1 {{ font-family:'Arial',sans-serif;font-size:4rem;
+             color:#fff;text-transform:uppercase;
              animation: glow 1.5s ease-in-out infinite alternate,
-                        scale 1.5s ease-in-out infinite alternate; }
-        @keyframes glow {
-            from { text-shadow:0 0 10px #0f0; }
-            to   { text-shadow:0 0 20px #0f0, 0 0 30px #0f0; }
-        }
-        @keyframes scale {
-            from { transform:scale(1); }
-            to   { transform:scale(1.1); }
-        }
+                        scale 1.5s ease-in-out infinite alternate; }}
+        @keyframes glow {{
+            from {{ text-shadow:0 0 10px #0f0; }}
+            to   {{ text-shadow:0 0 20px #0f0,0 0 30px #0f0; }}
+        }}
+        @keyframes scale {{
+            from {{ transform:scale(1); }}
+            to   {{ transform:scale(1.1); }}
+        }}
     </style>
 </head>
 <body>
-    <h1>Siema!</h1>
+    <h1>{{ greeting }}</h1>
 </body>
 </html>
 """
 
-def send_embed(url, count, total):
+def send_embed(url, count, total, greeting):
     payload = {
         "embeds": [{
-            "title": f"Wizyta #{count}/{total}",
-            "description": f"Strona: {url}",
-            "color": 4838850
+            "title":       f"Wizyta #{count}/{total}",
+            "description": f"Strona: {url}\nPowitanie: {greeting}",
+            "color":       4838850
         }]
     }
     try:
@@ -108,9 +212,10 @@ def home():
     count = int(request.args.get("count", "1"))
     total = len(URLS)
     current_url = URLS[count - 1]
-    send_embed(current_url, count, total)
+    greeting = random.choice(GREETINGS)
+    send_embed(current_url, count, total, greeting)
     threading.Thread(target=trigger_next, args=(count,), daemon=True).start()
-    return render_template_string(HTML)
+    return render_template_string(HTML_TEMPLATE, greeting=greeting)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
