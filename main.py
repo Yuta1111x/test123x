@@ -1,222 +1,326 @@
-#!/usr/bin/env python3
-import subprocess
-import sys
-import threading
-import random
-from flask import Flask, render_template_string, request
-import requests
-
-# Upewnij się, że requests jest zainstalowane
-try:
-    import requests
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-    import requests
+from flask import Flask, render_template_string
 
 app = Flask(__name__)
 
-WEBHOOK_URL = "https://discord.com/api/webhooks/1340672206266568765/12pQ2cmefEuykpwQwSUed-YIsloEO6fRbpn4FXpAYjk19MqXtHCK-y69yRGZqrut2Clr"
-
-URLS = [
-    "https://test123x.onrender.com",
-    "https://test123x-ejhl.onrender.com",
-    "https://test123x-qng3.onrender.com",
-    "https://test123x-td7x.onrender.com",
-    "https://test123x-whm5.onrender.com",
-    "https://test123x-fhsv.onrender.com",
-    "https://test123x-5hkm.onrender.com",
-    "https://test123x-13j4.onrender.com",
-    "https://test123x-tfni.onrender.com",
-    "https://test123x-h0wm.onrender.com",
-    "https://test123x-4mqg.onrender.com",
-    "https://test123x-f1v7.onrender.com",
-    "https://test123x-1n2w.onrender.com",
-    "https://test123x-tybd.onrender.com",
-    "https://test123x-6phh.onrender.com",
-    "https://test123x-7t0f.onrender.com",
-    "https://test123x-zk4e.onrender.com",
-    "https://test123x-8my4.onrender.com",
-    "https://test123x-a3ad.onrender.com",
-    "https://test123x-51ov.onrender.com",
-    "https://test123x-n5zn.onrender.com",
-    "https://test123x-mce0.onrender.com",
-    "https://test123x-uqt3.onrender.com",
-    "https://test123x-u1jd.onrender.com",
-    "https://test123x-ipkq.onrender.com",
-    "https://test123x-vgir.onrender.com",
-    "https://test123x-lwz6.onrender.com",
-    "https://test123x-svqr.onrender.com",
-    "https://test123x-24jy.onrender.com",
-    "https://test123x-j75y.onrender.com",
-]
-
-# 100 losowych powitań
-GREETINGS = [
-    "Witaj, podróżniku!",
-    "Hejka!",
-    "Siemanko!",
-    "Dzień dobry!",
-    "Szczęść Boże!",
-    "Czołem!",
-    "Pozdrawiam!",
-    "Hej ho!",
-    "Yo!",
-    "Hola!",
-    "Salam!",
-    "Serwus!",
-    "Hej!",
-    "Witam serdecznie!",
-    "Hej, jak tam?",
-    "Siema!",
-    "Co słychać?",
-    "Wszystkiego dobrego!",
-    "Cześć!",
-    "Dobrego dnia!",
-    "Miłego dnia!",
-    "Udanego dnia!",
-    "Wspaniałego dnia!",
-    "Radosnego dnia!",
-    "Ciepłego powitania!",
-    "Wesołych wędrówek!",
-    "Pozdrawiam ciepło!",
-    "Zdrów bądź!",
-    "Moc pozdrowień!",
-    "Hejka, hejka!",
-    "Hej, hej!",
-    "Witaj!",
-    "Hej, hej, hej!",
-    "Czołem, czołem!",
-    "Yo, yo!",
-    "Salute!",
-    "Salut!",
-    "Grüß dich!",
-    "Buongiorno!",
-    "Bonjour!",
-    "Good day!",
-    "Good morning!",
-    "Guten Tag!",
-    "Buonasera!",
-    "Bonsoir!",
-    "Buena día!",
-    "Halo!",
-    "Hej, ho!",
-    "Witam!",
-    "Witajcie!",
-    "Czołgiem!",
-    "Dzień dobry wszystkim!",
-    "Witam wszystkich!",
-    "Hello!",
-    "Hej, witaj!",
-    "Pozdrowienia!",
-    "Miło cię widzieć!",
-    "Fajnie, że jesteś!",
-    "Cześć, cześć!",
-    "Słońca na drodze!",
-    "Siema, ziomek!",
-    "Siema, siema!",
-    "Hej, jak leci?",
-    "Co tam?",
-    "Hej, hej, hej!",
-    "Hej, co słychać?",
-    "Pozdrawiam serdecznie!",
-    "Witaj w sieci!",
-    "Witaj w necie!",
-    "Witaj w cyfrowym świecie!",
-    "Cześć wirtualnie!",
-    "Cześć online!",
-    "Siema w sieci!",
-    "Yo, welcome!",
-    "Yo, witaj!",
-    "Yo, pozdro!",
-    "Yo, cześć!",
-    "What’s up!",
-    "Howdy!",
-    "G’day!",
-    "Sup!",
-    "Halo, halo!",
-    "Witaj w mojej aplikacji!",
-    "Witam w moim świecie!",
-    "Pozdrowienia z serwera!",
-    "Serwer pozdrawia!",
-    "Masz dziś szczęście!",
-    "Dzień dobry z serwera!",
-    "Hej z serwera!",
-    "Cześć z serwera!",
-    "Witaj ponownie!",
-    "Miło znowu cię widzieć!",
-    "Znowu z tobą!",
-    "Znowu tu jesteś!",
-    "Znowu my się widzimy!",
-    "Hola, amigo!",
-    "Hola, amiga!",
-    "Saludos!",
-    "Hej, dawno nie było!",
-]
-
-HTML_TEMPLATE = """
+# Szablon HTML z przepięknymi stylami
+template = """
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>Animacja</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Przepiękna Strona ✨</title>
     <style>
-        body {{ display:flex; justify-content:center; align-items:center;
-               height:100vh; margin:0; background:#222; }}
-        h1 {{ font-family:'Arial',sans-serif;font-size:4rem;
-             color:#fff;text-transform:uppercase;
-             animation: glow 1.5s ease-in-out infinite alternate,
-                        scale 1.5s ease-in-out infinite alternate; }}
-        @keyframes glow {{
-            from {{ text-shadow:0 0 10px #0f0; }}
-            to   {{ text-shadow:0 0 20px #0f0,0 0 30px #0f0; }}
-        }}
-        @keyframes scale {{
-            from {{ transform:scale(1); }}
-            to   {{ transform:scale(1.1); }}
-        }}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .floating-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 80%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .main-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            color: white;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            margin-top: 50px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+
+        .card p {
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: sparkle 4s linear infinite;
+        }
+
+        @keyframes sparkle {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10px) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .cards-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>{{ greeting }}</h1>
+    <div class="container">
+        <div class="floating-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+
+        <div class="particles" id="particles"></div>
+
+        <div class="main-content">
+            <h1 class="hero-title">Witaj w Przyszłości! ✨</h1>
+            <p class="subtitle">Przepiękna strona stworzona z Flask i miłością do designu</p>
+            
+            <div class="cards-container">
+                <div class="card">
+                    <h3>🚀 Nowoczesny Design</h3>
+                    <p>Wykorzystujemy najnowsze trendy w web designie, z przepięknymi gradientami, animacjami i efektami glass morphism.</p>
+                </div>
+                
+                <div class="card">
+                    <h3>⚡ Super Szybka</h3>
+                    <p>Zoptymalizowana pod kątem wydajności, zapewnia płynne doświadczenie użytkownika na wszystkich urządzeniach.</p>
+                </div>
+                
+                <div class="card">
+                    <h3>🎨 Responsywna</h3>
+                    <p>Perfekcyjnie dostosowuje się do każdego ekranu - od smartfonów po duże monitory.</p>
+                </div>
+            </div>
+
+            <button class="btn" onclick="showMessage()">Kliknij mnie! 🎉</button>
+        </div>
+
+        <div class="footer">
+            <p>Stworzone z ❤️ przy użyciu Flask • Port 3000</p>
+        </div>
+    </div>
+
+    <script>
+        // Tworzenie animowanych cząsteczek
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 4 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Funkcja dla przycisku
+        function showMessage() {
+            alert('🎉 Gratulacje! Twoja strona jest naprawdę przepiękna! ✨');
+        }
+
+        // Uruchomienie animacji cząsteczek
+        createParticles();
+
+        // Dodatkowe efekty przy ładowaniu strony
+        window.addEventListener('load', function() {
+            document.body.style.opacity = '1';
+        });
+    </script>
 </body>
 </html>
 """
 
-def send_embed(url, count, total, greeting):
-    payload = {
-        "embeds": [{
-            "title":       f"Wizyta #{count}/{total}",
-            "description": f"Strona: {url}\nPowitanie: {greeting}",
-            "color":       4838850
-        }]
-    }
-    try:
-        r = requests.post(WEBHOOK_URL, json=payload, timeout=5)
-        r.raise_for_status()
-    except Exception as e:
-        print(f"⚠️ Błąd wysyłki embed: {e}", file=sys.stderr)
-
-def trigger_next(count):
-    total = len(URLS)
-    if count >= total:
-        return
-    next_count = count + 1
-    next_url = URLS[next_count - 1]
-    try:
-        requests.get(f"{next_url}/?count={next_count}", timeout=5)
-    except Exception as e:
-        print(f"⚠️ Błąd wywołania {next_url}: {e}", file=sys.stderr)
-
-@app.route("/")
+@app.route('/')
 def home():
-    count = int(request.args.get("count", "1"))
-    total = len(URLS)
-    current_url = URLS[count - 1]
-    greeting = random.choice(GREETINGS)
-    send_embed(current_url, count, total, greeting)
-    threading.Thread(target=trigger_next, args=(count,), daemon=True).start()
-    return render_template_string(HTML_TEMPLATE, greeting=greeting)
+    return render_template_string(template)
 
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5000"))
-    app.run(host="0.0.0.0", port=port)
+@app.route('/api/message')
+def api_message():
+    return {
+        'message': 'Twoja strona działa perfekcyjnie! 🚀',
+        'status': 'success',
+        'port': 3000
+    }
+
+if __name__ == '__main__':
+    print("🌟 Uruchamianie przepięknej strony Flask...")
+    print("🚀 Strona będzie dostępna na: http://localhost:3000")
+    print("✨ Przygotuj się na coś wyjątkowego!")
+    
+    # Uruchomienie bez debug mode aby uniknąć błędów z watchdogiem
+    try:
+        app.run(host='0.0.0.0', port=3000, debug=False)
+    except Exception as e:
+        print(f"❌ Błąd: {e}")
+        print("🔄 Próbuję uruchomić na localhost...")
+        app.run(host='127.0.0.1', port=3000, debug=False)
